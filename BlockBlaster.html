@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<body onload="init()">
+<p id="message">Don't let red through!</p>
+<p id="score">Score: </p>
+<p id="enemyScore"></p>
+<p id="difficulty">Difficulty: </p>
+<canvas style="border: 1px dotted"id="canvas" width="800" height="600" onclick="canvasClick()">
+		
+<script>
+	//Globals Variables
+	//-----------------
+	var fps = 30;
+	var canvasWidth = 800;
+	var canvasHeight = 600;
+	var canvas = document.getElementById("canvas");
+	var ctx = canvas.getContext("2d");
+	var bgColor = "#323232"
+	
+	var enemyScore = 0;
+	var renderTimer;
+	var difficultyTimer;
+	var spawnTimer;
+	var spawntime = 3000;
+	var gameTime = 0;
+	var difficulty = 50;
+	var score = 1;
+	var gameOver =false;
+	var entities = [];
+	var player = null;
+	
+	
+	
+	//Global Functions
+	//----------------
+	
+	//initialize
+	function init(){		
+		enemyScore = 0;
+		gameTime = 0;
+		difficulty = 1;
+		score = 0;
+		spawntime = 2000;
+		gameOver =false;
+		entities = [];
+		player = null;
+		
+		clearInterval(renderTimer);
+		clearInterval(difficultyTimer);
+		clearInterval(spawnTimer);
+		renderTimer = setInterval(render,1/fps * 100);
+		difficultyTimer = setInterval(increaseDifficulty,2000);
+		spawnTimer = setInterval(spawnEnemy,spawntime);
+
+		enemyPoints = 0;
+		gameTime = 0;
+		gameOver = false;
+		
+		updateScore();
+		
+		//Spawn player
+		player = new Player();
+		player.position.set(canvasWidth/2,canvasHeight-player.size);
+		player.render();
+		entities.push(player);
+
+		canvas.addEventListener('mousemove', function(evt) {
+			var mousePos = getMousePos(canvas, evt);
+			if (player) player.position.x = mousePos.x;
+		}, false);
+	}
+	
+	function canvasClick(){
+		var bullet = new Bullet();
+		bullet.position.set(player.position.x,player.position.y - player.size/2 - bullet.size /2);
+		bullet.velocity.y = -30;
+		entities.push(bullet);
+		if (score > 0) score -= 1;
+		updateScore();
+	}
+	
+	function increaseDifficulty(){
+		difficulty += 1;
+		spawntime -= 3;
+		clearInterval(spawnTimer);
+		spawnTimer = setInterval(spawnEnemy,spawntime);
+		updateScore();
+	}
+		
+	function death(entity){
+		if (entity.name == "Enemy") {
+			var particleCount = Math.floor((Math.random() * 10) + 5);
+			for (var i = 0; i < particleCount; i++){
+				var p = new Particle();
+				p.color = entity.color;
+				p.position.set(entity.position.x,entity.position.y);
+				entities.push(p);
+			}
+			score += 5;
+		}
+		removeEntity(entity);
+		updateScore();
+	}
+	
+	function removeEntity(entity){
+		var idx = entities.indexOf(entity);
+		if (idx > -1) entities.splice(idx,1);
+	}
+	
+	function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+		return new Vector2(evt.clientX - rect.left,
+							evt.clientY - rect.top)
+    }
+	
+	function overlaps(entityA,entityB){
+		var sa = entityA.size/2;
+		var x1a = entityA.position.x - sa;
+		var x2a = entityA.position.x + sa;
+		var y1a = entityA.position.y - sa;
+		var y2a = entityA.position.y + sa;
+		
+		var sb = entityB.size/2;
+		var x1b = entityB.position.x - sb;
+		var x2b = entityB.position.x + sb;
+		var y1b = entityB.position.y - sb;
+		var y2b = entityB.position.y + sb;
+		
+		return (x1a < x2b && x2a > x1b && y1a < y2b && y2a > y1b);
+	}
+		
+	//Spawns new enemy
+	function spawnEnemy(){
+		var e = new Enemy();
+		var px = Math.floor((Math.random() * canvasWidth));
+		var py = -e.size;
+		var v = difficulty;
+		var a = Math.floor((Math.random() * (v + 15)) + v);
+		var f = Math.floor((Math.random() * (v + 15)) + v);
+		e.position.set(px,py);
+		
+		var r = Math.random();
+		if (r > .5){
+			straightDownMotion(e,v);
+		}
+		else if (r > .3){
+			sineMotion(e,a,f,v);
+		}
+		else if (r > .1){
+			triangularMotion(e,a,f,v);
+		}
+		else{
+			sawtoothMotion(e,a,f,v);
+		}
+		
+		entities.push(e);
+	}
+	
+	//Score
+	function updateScore(){
+		if (enemyScore >= 3) {
+			document.getElementById("message").innerHTML = "GAME OVER!";	
+			gameOver = true;
+			clearInterval(renderTimer);
+			clearInterval(difficultyTimer);
+			clearInterval(spawnTimer);
+		}
+		else document.getElementById("message").innerHTML = "Don't let red through!";
+		document.getElementById("score").innerHTML = "Score: " + score;	
+		document.getElementById("enemyScore").innerHTML = "Enemies passed: " + enemyScore + "/3";
+		document.getElementById("difficulty").innerHTML = "Difficulty: " + difficulty;		
+	}
+		
+	//Render
+	function render(){
+		if (gameOver) return;
+		ctx.fillStyle = bgColor;
+		ctx.fillRect(0,0,canvasWidth,canvasHeight);
+		entities.forEach(function(e){
+			if (e.name == "Enemy"){
+				if (e.position.y > canvasHeight) {
+					score -= 10;
+					enemyScore += 1;
+					updateScore();
+					removeEntity(e);
+				}
+			}
+			e.update(1/fps);
+			e.render();
+		})
+		gameTime += 1/fps;
+	}
+	
+	//Straight down motion
+	function straightDownMotion(entity,speed){
+		entity.update = function(deltatime){
+			this.velocity.x = 0;
+			this.velocity.y = speed;
+			Entity.prototype.update.call(this,deltatime);
+		}	
+	}
+	//Define sin wave motion
+	function sineMotion(entity,amplitude,freq,speed){
+		entity.update = function(deltatime){
+			this.velocity.x = amplitude * Math.cos(this.position.y/freq);
+			this.velocity.y = speed;
+			Entity.prototype.update.call(this,deltatime);
+		}
+	}
+	//Define saw tooth motion (sorta)
+	function sawtoothMotion(entity, amplitude,freq,speed){
+		entity.update = function(deltatime){
+			this.velocity.x = ((-2*amplitude)/Math.PI)*Math.atan(1/Math.tan(this.position.y / freq));
+			this.velocity.y = speed;
+			Entity.prototype.update.call(this,deltatime);
+		}
+	}
+	//Define triangular motion
+	function triangularMotion(entity, amplitude,freq,speed){
+		entity.update = function(deltatime){
+			this.velocity.x = ((2*amplitude)/Math.PI)*Math.asin(Math.sin(this.position.y / freq));
+			this.velocity.y = speed;
+			Entity.prototype.update.call(this,deltatime);
+		}
+	}
+	
+	// Classes
+	//----------
+	
+	//Vector2
+	var Vector2 = function(x1,y1){
+		this.x = x1;
+		this.y = y1;
+	}
+	Vector2.prototype.set = function(a,b){
+		this.x = a;
+		this.y = b;
+	}
+	
+	//Entity (Base class)
+	var Entity = function(){
+		this.name = "Entity";
+		this.size = 25;
+		this.position = new Vector2(0,0);
+		this.velocity = new Vector2(0,0);
+		this.color = "#FFFFFF";
+	}
+	Entity.prototype.sayName = function(){
+		console.log(this.name);
+	}
+	Entity.prototype.update = function(deltaTime){
+		this.position.x += this.velocity.x * deltaTime;
+		this.position.y += this.velocity.y * deltaTime;
+		
+		//Keep in bounds
+		if (this.position.x - this.size < 0) {this.position.x = this.size;}
+		if (this.position.x + this.size > canvasWidth) {this.position.x = canvasWidth - this.size;}
+	}
+	Entity.prototype.render = function(){
+		ctx.fillStyle = this.color;
+		ctx.fillRect(this.position.x,this.position.y,this.size,this.size);
+	}
+	
+	//Enemy Entity
+	var Enemy = function(){
+		Entity.call(this);
+		this.name = "Enemy";
+		this.color = "#DB4C4C"
+	}
+	Enemy.prototype = Object.create(Entity.prototype);
+	Enemy.prototype.constructor = Entity;
+	
+	
+	//Player Entity
+	var Player = function(){
+		Entity.call(this);
+		this.name = "Player";
+		this.color = "#4747FF"
+	}
+	Player.prototype = Object.create(Entity.prototype);
+	Player.prototype.constructor = Entity;
+	
+	//Particle Entity
+	var Particle = function(){
+		Entity.call(this);
+		this.name = "Particle";
+		this.size = 10;
+		this.time = 0;
+		this.maxTime = 5;
+		this.velocity.x = Math.floor((Math.random() * 20) - 10);
+		this.velocity.y = Math.floor((Math.random() * 20) - 10);
+	}
+	Particle.prototype = Object.create(Entity.prototype);
+	Particle.prototype.constructor = Entity;
+	Particle.prototype.update = function(deltatime){
+		Entity.prototype.update.call(this,deltatime);
+		this.time += deltatime;
+		if (this.time >= this.maxTime) removeEntity(this);
+	}
+	
+	//Bullet Entity
+	var Bullet = function(){
+		Entity.call(this);
+		this.name = "Bullet";
+		this.size = 10;
+		this.time = 0;
+		this.particlesDelay = .5;
+	}
+	Bullet.prototype = Object.create(Entity.prototype);
+	Bullet.prototype.constructor = Entity;
+	Bullet.prototype.update = function(deltatime){
+		Entity.prototype.update.call(this,deltatime);
+		
+		var me = this;
+		entities.forEach(function(e){
+			if (e !== me && e.name != "Particle"){
+				if (overlaps(me,e)){
+					death(e);
+					removeEntity(me);
+				}
+			}
+		})
+		
+		if (this.position.y < 0) removeEntity(this);
+		
+
+		this.time += deltatime;
+		if (this.time >= this.particlesDelay){
+			this.time = 0;
+			var p = new Particle();
+			p.size = 3;
+			p.color = "#FFAE19";
+			p.position.x = this.position.x;
+			p.position.y = this.position.y;
+			p.maxTime = 5;
+			entities.push(p);
+		}
+
+		
+	}
+	
+
+</script>		
+</body>
+
+</html>
