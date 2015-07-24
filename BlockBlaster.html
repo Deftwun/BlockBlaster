@@ -12,10 +12,9 @@
 			var canvas = document.getElementById("canvas");
 			var ctx = canvas.getContext("2d");
 			var bgColor = "rgb(40,40,40)"
-
 			var ready;
 			var enemyScore;
-			var renderTimer;
+			var renderTimer = setInterval(render,1/fps*100);
 			var difficultyTimer;
 			var spawnTimer;
 			var spawntime;
@@ -27,14 +26,11 @@
 			var entities = [];
 			var player;
 			var fader;
-
 			//Global Functions
 			//----------------
-
 			//Reset app back to 'Ready?' Screen
 			function reset(){
 				if (score > highScore) highScore = score;
-
 				ready = true;
 				enemyScore = 0;
 				gameTime = 0;
@@ -45,48 +41,40 @@
 				fader = 0;
 				entities = [];
 				player = null;
-
 				clearTimers()
-				renderTimer = setInterval(render,1/fps*100);
+				//renderTimer = setInterval(render,1/fps*100);
 			}
-
 			function clearTimers(){
-				clearInterval(renderTimer);
+				//clearInterval(renderTimer);
 				clearInterval(difficultyTimer);
 				clearInterval(spawnTimer);
 			}
-
 			function initializeTimers(){
-				renderTimer = setInterval(render,1/fps * 100);
+				//renderTimer = setInterval(render,1/fps * 100);
 				difficultyTimer = setInterval(increaseDifficulty,2000);
 				spawnTimer = setInterval(spawnEnemy,spawntime);
 			}
-
 			//Initialize / Start game
 			function init(){
-
 				ready = false;
 				clearTimers();
 				initializeTimers();
-
+				
 				//Spawn player
 				player = new Player();
 				player.position.set(canvas.width/2,canvas.height-player.size);
 				player.render();
 				entities.push(player);
-
 				canvas.addEventListener('mousemove', function(evt) {
 					var mousePos = getMousePos(canvas, evt);
 					if (player && !gameOver) player.position.x = mousePos.x;
 				}, false);
 			}
-
 			//Update Entities
 			function updateEntities(){
 				entities.forEach(function(e){
 					if (e.position.y > canvas.height + 20){
 						if (e.name == "Enemy"){
-							score -= 10;
 							enemyScore += 1;
 						}
 						removeEntity(e);
@@ -94,13 +82,11 @@
 					e.update(1/fps);
 				})
 			}
-
 			//Draw background
 			function drawBG(){
 				ctx.fillStyle = bgColor;
 				ctx.fillRect(0,0,canvas.width,canvas.height);
 			}
-
 			//Draw Score / HUD
 			function drawScore(){
 				ctx.fillStyle = "#CCFF99";
@@ -108,7 +94,6 @@
 				ctx.fillText("Score: " + score,10,24);
 				ctx.font = "16px sans-serif";
 				ctx.fillText("High Score: " + highScore,10,48);
-
 				var enemyScoreString = "";
 				for (var i = 0; i < enemyScore; i++){
 					enemyScoreString += "X";
@@ -116,12 +101,9 @@
 				ctx.font = "24px sans-serif";
 				ctx.fillStyle = "#FF6666";
 				ctx.fillText(enemyScoreString,canvas.width - 75,24);
-
 				ctx.font = "16px sans-serif";
 				ctx.fillText("Difficulty: " + difficulty,canvas.width/2 - 50,24);
-
 			}
-
 			//Draws some static.
 			//@param alpha transparency
 			function drawStatic(alpha){
@@ -134,7 +116,6 @@
 					}
 				}
 			}
-
 			//Draws 'Ready?' screen
 			function drawReadyScreen(){
 				drawBG();
@@ -146,23 +127,21 @@
 				ctx.fillText("READY?",canvas.width/2 - 140,canvas.height/2);
 				drawScore();
 			}
-
 			//Draw all entities
 			function drawEntities(){
 				entities.forEach(function(e){e.render();});
 			}
-
 			//Draw 'Game Over' screen
 			function drawGameOver(){
-				//drawStatic(.25);
+				ctx.fillStyle = "rgba(0,0,0,"+fader +")";
+				ctx.fillRect(0,0,canvas.width,canvas.height);
+				drawStatic(fader/2);
 				drawScore();
-				gameOver = true;
 				fader += .1 * 1/fps
 				ctx.fillStyle = "rgba(255,255,255," + fader + ")";
 				ctx.font = "72px sans-serif";
 				ctx.fillText("GAME OVER",canvas.width/2 - 220,canvas.height/2);
 			}
-
 			//Render everything
 			function render(){
 				drawBG();
@@ -173,18 +152,17 @@
 				updateEntities();
 				gameTime += 1/fps;
 				if (enemyScore >= 3) {
+					clearTimers();
 					gameOver = true;
 					fader = 0;
 				}
 			}
-
 			//Return mouse position relative to canvas
 			function getMousePos(canvas, evt) {
 						var rect = canvas.getBoundingClientRect();
 				return new Vector2(evt.clientX - rect.left,
 									evt.clientY - rect.top)
 			}
-
 			//Click Event
 			function canvasClick(){
 				if (gameOver)	{reset();return;}
@@ -195,7 +173,6 @@
 				entities.push(bullet);
 				if (score > 0) score -= 1;
 			}
-
 			//Increment difficulty
 			function increaseDifficulty(){
 				difficulty += 1;
@@ -203,7 +180,6 @@
 				clearInterval(spawnTimer);
 				spawnTimer = setInterval(spawnEnemy,spawntime);
 			}
-
 			//Change alpha of color
 			function setAlpha(color,alpha){
 				if (color.indexOf('a') == -1){
@@ -212,9 +188,7 @@
 				else {
 					//?
 				}
-
 			}
-
 			//Entity death
 			function death(entity){
 				if (entity.name == "Enemy") {
@@ -230,13 +204,11 @@
 				}
 				removeEntity(entity);
 			}
-
 			//Remove Entity
 			function removeEntity(entity){
 				var idx = entities.indexOf(entity);
 				if (idx > -1) entities.splice(idx,1);
 			}
-
 			//Check if two entities overlap
 			function overlaps(entityA,entityB){
 				var sa = entityA.size;
@@ -244,16 +216,13 @@
 				var x2a = entityA.position.x + sa;
 				var y1a = entityA.position.y;
 				var y2a = entityA.position.y + sa;
-
 				var sb = entityB.size;
 				var x1b = entityB.position.x;
 				var x2b = entityB.position.x + sb;
 				var y1b = entityB.position.y;
 				var y2b = entityB.position.y + sb;
-
 				return (x1a < x2b && x2a > x1b && y1a < y2b && y2a > y1b);
 			}
-
 			//Spawns new enemy
 			function spawnEnemy(){
 				var e = new Enemy();
@@ -263,7 +232,6 @@
 				var a = Math.floor((Math.random() * (v + 15)) + v);
 				var f = Math.floor((Math.random() * (v + 15)) + v);
 				e.position.set(px,py);
-
 				var r = Math.random();
 				if (r > .5){
 					straightDownMotion(e,v);
@@ -277,10 +245,8 @@
 				else{
 					sawtoothMotion(e,a,f,v);
 				}
-
 				entities.push(e);
 			}
-
 			//Straight down motion
 			function straightDownMotion(entity,speed){
 				entity.update = function(deltatime){
@@ -315,7 +281,6 @@
 					Entity.prototype.update.call(this,deltatime);
 				}
 			}
-
 			//Generate random rgba color string
 			function randomColor(min,max){
 				var r = Math.floor((Math.random() * max) + min);
@@ -324,10 +289,8 @@
 				var col = "rgb(" + r + "," + g + "," + b + ")";
 				return col;
 			}
-
 			// Classes
 			//----------
-
 			//Vector2
 			var Vector2 = function(x1,y1){
 				this.x = x1;
@@ -337,7 +300,6 @@
 				this.x = a;
 				this.y = b;
 			}
-
 			//Entity (Base class)
 			var Entity = function(){
 				this.name = "Entity";
@@ -352,7 +314,6 @@
 			Entity.prototype.update = function(deltaTime){
 				this.position.x += this.velocity.x * deltaTime;
 				this.position.y += this.velocity.y * deltaTime;
-
 				//Keep in bounds
 				if (this.position.x - this.size < 0) {this.position.x = this.size;}
 				if (this.position.x + this.size > canvas.width) {this.position.x = canvas.width - this.size;}
@@ -361,7 +322,6 @@
 				ctx.fillStyle = this.color;
 				ctx.fillRect(this.position.x,this.position.y,this.size,this.size);
 			}
-
 			//Enemy Entity
 			var Enemy = function(){
 				Entity.call(this);
@@ -371,8 +331,6 @@
 			}
 			Enemy.prototype = Object.create(Entity.prototype);
 			Enemy.prototype.constructor = Entity;
-
-
 			//Player Entity
 			var Player = function(){
 				Entity.call(this);
@@ -381,7 +339,6 @@
 			}
 			Player.prototype = Object.create(Entity.prototype);
 			Player.prototype.constructor = Entity;
-
 			//Particle Entity
 			var Particle = function(){
 				Entity.call(this);
@@ -399,8 +356,6 @@
 				this.time += deltatime;
 				if (this.time >= this.maxTime) removeEntity(this);
 			}
-
-
 			//Bullet Entity
 			var Bullet = function(){
 				Entity.call(this);
@@ -414,7 +369,6 @@
 			Bullet.prototype.constructor = Entity;
 			Bullet.prototype.update = function(deltatime){
 				Entity.prototype.update.call(this,deltatime);
-
 				//Check for collisions
 				var me = this;
 				entities.forEach(function(e){
@@ -425,10 +379,8 @@
 						}
 					}
 				})
-
 				//Remove from game if outside bounds
 				if (this.position.y < 0) removeEntity(this);
-
 				//Create particles
 				this.time += deltatime;
 				if (this.time >= this.particlesDelay){
@@ -443,7 +395,6 @@
 					entities.push(p);
 				}
 			}
-
 		</script>
 	</body>
 </html>
