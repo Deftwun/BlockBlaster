@@ -1,6 +1,6 @@
 
 	//Create canvas
-	document.body.innerHTML += '<canvas id="canvas" width="800" height="600" onclick = "canvasClick()"></canvas>';
+	document.body.innerHTML += '<canvas id="canvas" width="800" height="600"></canvas>';
 
 	//Globals Variables
 	//-----------------
@@ -427,6 +427,8 @@
 
 	//HTML load event
 	document.addEventListener('DOMContentLoaded', reset());
+	
+	canvas.addEventListener("click",canvasClick);
 	
 	//Mouse move event
 	canvas.addEventListener('mousemove', function(evt) {
