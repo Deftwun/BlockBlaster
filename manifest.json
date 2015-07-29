@@ -1,0 +1,12 @@
+{
+  "name": "BlockBlaster",
+  "description": "Non-stop block blasting amazingness!",
+  "version": "1.5",
+  "manifest_version": 2,
+  "app": {
+    "background": {
+      "scripts": ["background.js"]
+    }
+  },
+  "icons": { "16": "icon16.png", "128": "icon128.png" }
+}
