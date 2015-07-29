@@ -3,6 +3,12 @@ chrome.app.runtime.onLaunched.addListener(function() {
     'frame':'none',
     'innerBounds': {
       'width': 800,
-      'height': 600},
-    'resizable':false})
+      'height': 630},
+    'resizable':false},
+    function(createdWindow){
+      createdWindow.setAlwaysOnTop(true);
+      createdWindow.contentWindow.minimize = function(){
+        createdWindow.minimize();
+      }
+    })
 });

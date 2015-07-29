@@ -428,6 +428,15 @@
 	//HTML load event
 	document.addEventListener('DOMContentLoaded', reset());
 
+	//Close
+	document.getElementById("closeButton").onclick=function(){
+		self.close()
+	}
+	//Minimize
+	document.getElementById("minimizeButton").onclick=function(){
+		minimize();
+	}
+
 	canvas.addEventListener("click",canvasClick);
 
 	//Mouse move event
