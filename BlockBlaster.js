@@ -6,7 +6,7 @@
 	//-----------------
 	var fps = 30;
 	var canvas = document.getElementById('canvas');
-	var ctx = canvas.getContext("2d");			
+	var ctx = canvas.getContext("2d");
 	var bgColor = "rgb(40,40,40)"
 	var ready;
 	var enemyScore;
@@ -22,11 +22,11 @@
 	var entities = [];
 	var player;
 	var fader;
-	
+
 
 	//Global Functions
 	//----------------
-	
+
 	//Reset app back to 'Ready?' Screen
 	function reset(){
 		if (score > highScore) highScore = score;
@@ -42,25 +42,25 @@
 		player = null;
 		clearTimers()
 	}
-	
+
 	//Clear all timers
 	function clearTimers(){
 		clearInterval(difficultyTimer);
 		clearInterval(spawnTimer);
 	}
-	
+
 	//Initialize all timers
 	function initializeTimers(){
 		difficultyTimer = setInterval(increaseDifficulty,2000);
 		spawnTimer = setInterval(spawnEnemy,spawntime);
 	}
-	
+
 	//Initialize / Start game
 	function init(){
 		ready = false;
 		clearTimers();
 		initializeTimers();
-		
+
 		//Spawn player
 		player = new Player();
 		player.position.set(canvas.width/2,canvas.height-player.size);
@@ -68,7 +68,7 @@
 		entities.push(player);
 
 	}
-	
+
 	//Update Entities
 	function updateEntities(){
 		entities.forEach(function(e){
@@ -81,13 +81,13 @@
 			e.update(1/fps);
 		})
 	}
-	
+
 	//Draw background
 	function drawBG(){
 		ctx.fillStyle = bgColor;
 		ctx.fillRect(0,0,canvas.width,canvas.height);
 	}
-	
+
 	//Draw Score / HUD
 	function drawScore(){
 		ctx.fillStyle = "#CCFF99";
@@ -105,7 +105,7 @@
 		ctx.font = "16px sans-serif";
 		ctx.fillText("Difficulty: " + difficulty,canvas.width/2 - 50,24);
 	}
-	
+
 	//Draws some static.
 	//@param alpha transparency
 	function drawStatic(alpha){
@@ -118,7 +118,7 @@
 			}
 		}
 	}
-	
+
 	//Draws 'Ready?' screen
 	function drawReadyScreen(){
 		drawBG();
@@ -130,12 +130,12 @@
 		ctx.fillText("READY?",canvas.width/2 - 140,canvas.height/2);
 		drawScore();
 	}
-	
+
 	//Draw all entities
 	function drawEntities(){
 		entities.forEach(function(e){e.render();});
 	}
-	
+
 	//Draw 'Game Over' screen
 	function drawGameOver(){
 		ctx.fillStyle = "rgba(0,0,0,"+fader +")";
@@ -147,7 +147,7 @@
 		ctx.font = "72px sans-serif";
 		ctx.fillText("GAME OVER",canvas.width/2 - 220,canvas.height/2);
 	}
-	
+
 	//Render everything
 	function render(){
 		drawBG();
@@ -163,14 +163,14 @@
 			fader = 0;
 		}
 	}
-	
+
 	//Return mouse position relative to canvas
 	function getMousePos(canvas, evt) {
 		var rect = canvas.getBoundingClientRect();
 		return new Vector2(evt.clientX - rect.left,
 							evt.clientY - rect.top)
 	}
-			
+
 	//Click Event
 	function canvasClick(){
 		if (gameOver){ if (fader > .5) reset();return;}
@@ -181,7 +181,7 @@
 		entities.push(bullet);
 		if (score > 0) score -= 1;
 	}
-	
+
 	//Increment difficulty
 	function increaseDifficulty(){
 		difficulty += 1;
@@ -189,14 +189,14 @@
 		clearInterval(spawnTimer);
 		spawnTimer = setInterval(spawnEnemy,spawntime);
 	}
-	
+
 	//Change alpha of color
 	function setAlpha(color,alpha){
 		if (color.indexOf('a') == -1){
 			return color.replace(")",","+alpha+")").replace("rgb","rgba");
 		}
 	}
-	
+
 	//Entity death
 	function death(entity){
 		if (entity.name == "Enemy") {
@@ -212,13 +212,13 @@
 		}
 		removeEntity(entity);
 	}
-	
+
 	//Remove Entity
 	function removeEntity(entity){
 		var idx = entities.indexOf(entity);
 		if (idx > -1) entities.splice(idx,1);
 	}
-	
+
 	//Check if two entities overlap
 	function overlaps(entityA,entityB){
 		var sa = entityA.size;
@@ -233,7 +233,7 @@
 		var y2b = entityB.position.y + sb;
 		return (x1a < x2b && x2a > x1b && y1a < y2b && y2a > y1b);
 	}
-	
+
 	//Spawns new enemy
 	function spawnEnemy(){
 		var e = new Enemy();
@@ -258,7 +258,7 @@
 		}
 		entities.push(e);
 	}
-	
+
 	//Straight down motion
 	function straightDownMotion(entity,speed){
 		entity.update = function(deltatime){
@@ -267,7 +267,7 @@
 			Entity.prototype.update.call(this,deltatime);
 		}
 	}
-	
+
 	//Define sin wave motion
 	function sineMotion(entity,amplitude,freq,speed){
 		entity.update = function(deltatime){
@@ -276,7 +276,7 @@
 			Entity.prototype.update.call(this,deltatime);
 		}
 	}
-	
+
 	//Define saw tooth motion (sorta)
 	function sawtoothMotion(entity, amplitude,freq,speed){
 		var modifier = 1;
@@ -287,7 +287,7 @@
 			Entity.prototype.update.call(this,deltatime);
 		}
 	}
-	
+
 	//Define triangular motion ()
 	function triangularMotion(entity, amplitude,freq,speed){
 		entity.update = function(deltatime){
@@ -296,7 +296,7 @@
 			Entity.prototype.update.call(this,deltatime);
 		}
 	}
-	
+
 	//Generate random rgba color string
 	function randomColor(min,max){
 		var r = Math.floor((Math.random() * max) + min);
@@ -305,10 +305,10 @@
 		var col = "rgb(" + r + "," + g + "," + b + ")";
 		return col;
 	}
-	
+
 	// Classes
 	//----------
-	
+
 	//Vector2
 	var Vector2 = function(x1,y1){
 		this.x = x1;
@@ -318,7 +318,7 @@
 		this.x = a;
 		this.y = b;
 	}
-	
+
 	//Entity (Base class)
 	var Entity = function(){
 		this.name = "Entity";
@@ -334,14 +334,14 @@
 		this.position.x += this.velocity.x * deltaTime;
 		this.position.y += this.velocity.y * deltaTime;
 		//Keep in bounds
-		if (this.position.x - this.size < 0) {this.position.x = this.size;}
+		if (this.position.x < 0) {this.position.x = this.size;}
 		if (this.position.x + this.size > canvas.width) {this.position.x = canvas.width - this.size;}
 	}
 	Entity.prototype.render = function(){
 		ctx.fillStyle = this.color;
 		ctx.fillRect(this.position.x,this.position.y,this.size,this.size);
 	}
-	
+
 	//Enemy Entity
 	var Enemy = function(){
 		Entity.call(this);
@@ -359,7 +359,7 @@
 	}
 	Player.prototype = Object.create(Entity.prototype);
 	Player.prototype.constructor = Entity;
-	
+
 	//Particle Entity
 	var Particle = function(){
 		Entity.call(this);
@@ -377,7 +377,7 @@
 		this.time += deltatime;
 		if (this.time >= this.maxTime) removeEntity(this);
 	}
-	
+
 	//Bullet Entity
 	var Bullet = function(){
 		Entity.call(this);
@@ -391,7 +391,7 @@
 	Bullet.prototype.constructor = Entity;
 	Bullet.prototype.update = function(deltatime){
 		Entity.prototype.update.call(this,deltatime);
-		
+
 		//Check for collisions
 		var me = this;
 		entities.forEach(function(e){
@@ -404,7 +404,7 @@
 		})
 		//Remove from game if outside bounds
 		if (this.position.y < 0) removeEntity(this);
-		
+
 		//Create particles
 		this.time += deltatime;
 		if (this.time >= this.particlesDelay){
@@ -419,20 +419,19 @@
 			entities.push(p);
 		}
 	}
-	
-	
+
+
 
 	//	These must remain at the bottom of this file & in this order //
 	//	============================================================ //
 
 	//HTML load event
 	document.addEventListener('DOMContentLoaded', reset());
-	
+
 	canvas.addEventListener("click",canvasClick);
-	
+
 	//Mouse move event
 	canvas.addEventListener('mousemove', function(evt) {
 			var mousePos = getMousePos(canvas, evt);
 			if (player && !gameOver) player.position.x = mousePos.x;
 	}, false);
-	
