@@ -1,0 +1,34 @@
+html
+{
+  -webkit-user-select: none;
+}
+
+body{
+  margin:0;
+}
+
+#icon{
+  float:left;
+  margin:5px;
+}
+
+#titleBar{
+  -webkit-app-region: drag;
+  background-image:url(assets/menu.png);
+  width:800px;
+  height:30px;
+}
+
+#minimizeButton{
+  float:left;
+}
+
+#closeButton{
+  float:right;
+}
+
+#titleBarButtons{
+    display:inline;
+    float:right;
+    -webkit-app-region: no-drag;
+}
