@@ -22,6 +22,7 @@
 	var entities = [];
 	var player;
 	var fader;
+	var bulletCount = 1;
 
 
 	//Global Functions
@@ -39,6 +40,7 @@
 		gameOver = false;
 		fader = 0;
 		entities = [];
+		entitiesToRemove = [];
 		player = null;
 		clearTimers()
 	}
@@ -156,6 +158,10 @@
 		if (gameOver){drawGameOver(); return;}
 		else if (ready){drawReadyScreen(); return;}
 		updateEntities();
+		entitiesToRemove.forEach(function(e){
+			var idx = entities.indexOf(e);
+			if (idx > -1) entities.splice(idx,1);
+		})
 		gameTime += 1/fps;
 		if (enemyScore >= 3) {
 			clearTimers();
@@ -182,10 +188,30 @@
 		if (score > 0) score -= 1;
 	}
 
+	function activateEffect(type){
+		if (type == "scoreBoost"){
+			score += 250;
+			console.log("+250");
+		}
+		else if (type == "tripleShot"){
+			console.log("TRIPLE SHOT");
+			//TripleShot code here
+		}
+		else if (type == "bomb"){
+			console.log("BOMB");
+			entities.forEach(function(e){
+				if (e.name == "Enemy"){
+					death(e);
+				}
+			})
+		}
+	}
+
 	//Increment difficulty
 	function increaseDifficulty(){
 		difficulty += 1;
 		if (spawntime > 20) spawntime -= 20;
+		if (difficulty % 1 == 0 && Math.random() > .5) spawnPowerUp();
 		clearInterval(spawnTimer);
 		spawnTimer = setInterval(spawnEnemy,spawntime);
 	}
@@ -197,6 +223,8 @@
 		}
 	}
 
+
+
 	//Entity death
 	function death(entity){
 		if (entity.name == "Enemy") {
@@ -205,22 +233,46 @@
 				var p = new Particle();
 				p.color = entity.color;
 				p.size = Math.floor((Math.random() * entity.size/2) + 5);
-				p.position.set(entity.position.x+entity.size/2,entity.position.y+entity.size/2);
+				//p.position.set(entity.position.x+entity.size/2,entity.position.y+entity.size/2);
+				var modx = (Math.random() * entity.size/2);
+				var mody = (Math.random() * entity.size/2);
+				p.position.x = entity.position.x + modx;
+				p.position.y = entity.position.y + mody;
 				entities.push(p);
 			}
 			score += 25;
 		}
+		else if (entity.name == "PowerUp"){
+			var particleCount = Math.floor((Math.random() * 6) + 3);
+			for (var i = 0; i < particleCount; i++){
+				var p = new Particle();
+				p.color = randomColor(100,255); //Rainbow colored particles
+				p.size = Math.floor((Math.random() * entity.size/2) + 5);
+				//p.position.set(entity.position.x+entity.size/2,entity.position.y+entity.size/2);
+				var modx = (Math.random() * entity.size/2);
+				var mody = (Math.random() * entity.size/2);
+				p.position.x = entity.position.x + modx;
+				p.position.y = entity.position.y + mody;
+				entities.push(p);
+			}
+			activateEffect(entity.effect);
+		}
+
 		removeEntity(entity);
 	}
 
 	//Remove Entity
 	function removeEntity(entity){
+		entitiesToRemove.push(entity);
+		/*
 		var idx = entities.indexOf(entity);
 		if (idx > -1) entities.splice(idx,1);
+		*/
 	}
 
 	//Check if two entities overlap
 	function overlaps(entityA,entityB){
+
 		var sa = entityA.size;
 		var x1a = entityA.position.x;
 		var x2a = entityA.position.x + sa;
@@ -231,7 +283,33 @@
 		var x2b = entityB.position.x + sb;
 		var y1b = entityB.position.y;
 		var y2b = entityB.position.y + sb;
+
 		return (x1a < x2b && x2a > x1b && y1a < y2b && y2a > y1b);
+	}
+
+	//Spawns new powerup
+	function spawnPowerUp(){
+		var e = new PowerUp();
+		var px = Math.floor((Math.random() * canvas.width));
+		var py = -e.size;
+		var v = (Math.random() * difficulty) + difficulty / 2;
+		var a = Math.floor((Math.random() * (v + 15)) + v) / 2;
+		var f = Math.floor((Math.random() * (v + 15)) + v) / 2;
+		e.position.set(px,py);
+		var r = Math.random();
+		if (r > .5){
+			straightDownMotion(e,v);
+		}
+		else if (r > .3){
+			sineMotion(e,a,f,v);
+		}
+		else if (r > .1){
+			triangularMotion(e,a,f,v);
+		}
+		else{
+			sawtoothMotion(e,a,f,v);
+		}
+		entities.push(e);
 	}
 
 	//Spawns new enemy
@@ -239,7 +317,8 @@
 		var e = new Enemy();
 		var px = Math.floor((Math.random() * canvas.width));
 		var py = -e.size;
-		var v = difficulty;
+		//var v = difficulty;
+		var v = (Math.random() * difficulty) + difficulty / 2;
 		var a = Math.floor((Math.random() * (v + 15)) + v);
 		var f = Math.floor((Math.random() * (v + 15)) + v);
 		e.position.set(px,py);
@@ -277,7 +356,7 @@
 		}
 	}
 
-	//Define saw tooth motion (sorta)
+	//Define saw tooth motion
 	function sawtoothMotion(entity, amplitude,freq,speed){
 		var modifier = 1;
 		if (Math.random() > .5) modifier = -1;
@@ -288,7 +367,7 @@
 		}
 	}
 
-	//Define triangular motion ()
+	//Define triangular motion (sorta. More of a sine wave in the end really)
 	function triangularMotion(entity, amplitude,freq,speed){
 		entity.update = function(deltatime){
 			this.velocity.x = ((2*amplitude)/Math.PI)*Math.asin(Math.sin(this.position.y / freq));
@@ -418,6 +497,57 @@
 			p.position.y = this.position.y - p.size/2;
 			entities.push(p);
 		}
+	}
+
+	//PowerUp Entity
+	var PowerUp = function(){
+		Entity.call(this);
+		this.name = "PowerUp";
+		this.size = 20;
+		this.time = 0;
+		this.particlesDelay = .25;
+
+		var r = Math.random();
+		/*
+		if (r < .5){this.effect = "scoreBoost";}
+		else if (r < .75){this.effect = "tripleShot";}
+		else {this.effect = "bomb";}
+		*/
+		this.effect = "bomb";
+
+	}
+	PowerUp.prototype = Object.create(Entity.prototype);
+	PowerUp.prototype.constructor = Entity;
+	PowerUp.prototype.update = function(deltatime){
+		Entity.prototype.update.call(this,deltatime);
+
+		//Remove from game if outside bounds
+		if (this.position.y < 0 || this.position.y+this.size > canvas.height) removeEntity(this);
+
+		//Create particles
+		this.time += deltatime;
+		if (this.time >= this.particlesDelay){
+			this.time = 0;
+			var p = new Particle();
+			p.size = Math.floor((Math.random() * 5)+2);
+			//p.color = setAlpha("rgb(125,125,125)",Math.random());
+			p.color = setAlpha(randomColor(100,255),Math.random()); //Rainbow colored particles
+			p.velocity.x /=2;
+			p.position.x = this.position.x + this.size /2 - p.size/2;
+			p.position.y = this.position.y - p.size/2;
+			entities.push(p);
+		}
+	}
+	PowerUp.prototype.render = function(){
+			ctx.fillStyle = randomColor(100,255);
+			/*
+			ctx.beginPath();
+			ctx.arc(this.position.x,this.position.y,this.size,0,2*Math.PI);
+			ctx.closePath();
+			ctx.stroke();
+			ctx.fill();
+			*/
+			ctx.fillRect(this.position.x,this.position.y,this.size,this.size);
 	}
 
 
