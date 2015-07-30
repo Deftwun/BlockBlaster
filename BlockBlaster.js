@@ -20,9 +20,15 @@
 	var highScore=0;
 	var gameOver;
 	var entities = [];
+	var entitiesToRemove = []
 	var player;
 	var fader;
-	var bulletCount = 1;
+	var tripleShotActive = false;
+	var tripleShotTimer;
+	var flash = false;
+	var bonusPointsMessage = false;
+	var tripleShotMessage = false;
+
 
 
 	//Global Functions
@@ -42,13 +48,16 @@
 		entities = [];
 		entitiesToRemove = [];
 		player = null;
-		clearTimers()
+		tripleShotActive = false;
+		flash = false;
+		clearTimers();
 	}
 
 	//Clear all timers
 	function clearTimers(){
 		clearInterval(difficultyTimer);
 		clearInterval(spawnTimer);
+		clearInterval(tripleShotTimer);
 	}
 
 	//Initialize all timers
@@ -155,8 +164,12 @@
 		drawBG();
 		drawEntities();
 		drawScore();
+		if (flash){drawFlash();}
+		if (bonusPointsMessage){drawBonusPointsMessage();}
+		if (tripleShotMessage){drawTripleShotMessage();}
 		if (gameOver){drawGameOver(); return;}
 		else if (ready){drawReadyScreen(); return;}
+
 		updateEntities();
 		entitiesToRemove.forEach(function(e){
 			var idx = entities.indexOf(e);
@@ -181,24 +194,79 @@
 	function canvasClick(){
 		if (gameOver){ if (fader > .5) reset();return;}
 		if (ready)		{init(); return;}
-		var bullet = new Bullet();
-		bullet.position.set(player.position.x + player.size / 2 - bullet.size/2,player.position.y - player.size/2 - bullet.size /2);
-		bullet.velocity.y = -30;
-		entities.push(bullet);
+
+		//Fire Bullets
+		fireBullet({x:0,y:-player.size},30);
+		if (tripleShotActive){
+			fireBullet({x:-player.size,y:-player.size},25);
+			fireBullet({x:player.size,y:-player.size},25);
+		}
 		if (score > 0) score -= 1;
 	}
 
+	//Fire bullet from player
+	function fireBullet(offset,speed){
+		var bullet = new Bullet();
+		bullet.position.set(player.position.x + player.size/2 - bullet.size/2 + offset.x,
+												player.position.y + player.size/2 - bullet.size/2 + offset.y);
+		bullet.velocity.y = -speed;
+		entities.push(bullet);
+	}
+
+	//Screen Flash
+	function drawFlash(){
+		fader -= (.1 * 1/fps);
+		ctx.fillStyle = "rgba(255,255,255," + fader + ")";
+		ctx.fillRect(0,0,canvas.width,canvas.height)
+		if (fader <= 0) {
+			flash = false;
+		}
+	}
+
+	//Draw Bonus points message
+	function drawBonusPointsMessage(){
+		fader -= (.1 * 1/fps);
+		ctx.fillStyle = "rgba(255,255,255," + fader + ")";
+		ctx.font = "72px sans-serif";
+		ctx.fillText("+250 POINTS!",canvas.width/2 - 220,canvas.height/2);
+		if (fader <= 0) {
+			bonusPointsMessage = false;
+		}
+	}
+
+	//Draw Triple shot message
+	function drawTripleShotMessage(){
+		fader -= (.1 * 1/fps);
+		ctx.fillStyle = "rgba(255,255,255," + fader + ")";
+		ctx.font = "72px sans-serif";
+		ctx.fillText("TRIPLE SHOT!",canvas.width/2 - 220,canvas.height/2);
+		if (fader <= 0) {
+			tripleShotMessage = false;
+		}
+	}
+
+	//Activate power up effect
 	function activateEffect(type){
 		if (type == "scoreBoost"){
-			score += 250;
 			console.log("+250");
+			fader = 1;
+			bonusPointsMessage=true;
+			score += 250;
 		}
 		else if (type == "tripleShot"){
 			console.log("TRIPLE SHOT");
-			//TripleShot code here
+			fader = 1;
+			tripleShotActive = true;
+			tripleShotMessage = true;
+			tripleShotTimer = setInterval(function(){
+				tripleShotActive=false;
+				clearInterval(tripleShotTimer);
+			},10000);
 		}
 		else if (type == "bomb"){
 			console.log("BOMB");
+			flash = true;
+			fader = 1;
 			entities.forEach(function(e){
 				if (e.name == "Enemy"){
 					death(e);
@@ -211,7 +279,7 @@
 	function increaseDifficulty(){
 		difficulty += 1;
 		if (spawntime > 20) spawntime -= 20;
-		if (difficulty % 1 == 0 && Math.random() > .5) spawnPowerUp();
+		if (difficulty % 5 == 0 && Math.random() > .5) spawnPowerUp();
 		clearInterval(spawnTimer);
 		spawnTimer = setInterval(spawnEnemy,spawntime);
 	}
@@ -464,7 +532,7 @@
 		this.size = 10;
 		this.time = 0;
 		this.color = "rgba(200,200,200,1)";
-		this.particlesDelay = .5;
+		this.particlesDelay = .7;
 	}
 	Bullet.prototype = Object.create(Entity.prototype);
 	Bullet.prototype.constructor = Entity;
@@ -506,14 +574,10 @@
 		this.size = 20;
 		this.time = 0;
 		this.particlesDelay = .25;
-
 		var r = Math.random();
-		/*
 		if (r < .5){this.effect = "scoreBoost";}
 		else if (r < .75){this.effect = "tripleShot";}
 		else {this.effect = "bomb";}
-		*/
-		this.effect = "bomb";
 
 	}
 	PowerUp.prototype = Object.create(Entity.prototype);
@@ -530,7 +594,6 @@
 			this.time = 0;
 			var p = new Particle();
 			p.size = Math.floor((Math.random() * 5)+2);
-			//p.color = setAlpha("rgb(125,125,125)",Math.random());
 			p.color = setAlpha(randomColor(100,255),Math.random()); //Rainbow colored particles
 			p.velocity.x /=2;
 			p.position.x = this.position.x + this.size /2 - p.size/2;
@@ -540,16 +603,8 @@
 	}
 	PowerUp.prototype.render = function(){
 			ctx.fillStyle = randomColor(100,255);
-			/*
-			ctx.beginPath();
-			ctx.arc(this.position.x,this.position.y,this.size,0,2*Math.PI);
-			ctx.closePath();
-			ctx.stroke();
-			ctx.fill();
-			*/
 			ctx.fillRect(this.position.x,this.position.y,this.size,this.size);
 	}
-
 
 
 	//	These must remain at the bottom of this file & in this order //
