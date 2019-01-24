@@ -1,11 +1,13 @@
 
 	//Create canvas
-	document.body.innerHTML += '<canvas id="canvas" width="800" height="600"></canvas>';
+	if (document.getElementById("blockblaster-canvas") == null){
+		document.body.innerHTML += '<canvas id="blockblaster-canvas" width="800" height="600"></canvas>'
+	}
 
 	//Globals Variables
 	//-----------------
 	var fps = 30;
-	var canvas = document.getElementById('canvas');
+	var canvas = document.getElementById('blockblaster-canvas');
 	var ctx = canvas.getContext("2d");
 	var bgColor = "rgb(40,40,40)"
 	var ready;
